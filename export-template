@@ -1,0 +1,171 @@
+﻿mse version: 0.3.8
+short name: Emmy
+full name: Emmy Export
+position hint: 110
+version: 2023-02-04
+installer group: magic/Export/planesculptors
+create directory: true
+
+depends on:
+	package: magic.mse-game
+	version: 2020-04-01
+
+game: magic
+file type: *.txt|*.txt|*.*|*.*
+
+option field:
+	type: boolean
+	name: write debug log
+	description: Write log.txt with section-header checks and saved card/image details.
+	initial: no
+
+# By EmmyEminence
+
+script:
+	separator := " || "
+	export_backs := {options.export_two_part != "Don't export second face"}
+	break_backs := {options.export_two_part == "On the next line as first face"}
+	pull_breaks := replace@(match:"\n", replace:"\\\\n ")
+	remove_breaks := replace@(match:"\n", replace:"")
+	remove_controls := replace@(match:"\r", replace:"")
+	remove_tabs := replace@(match:"\t", replace:"") +
+		replace@(match:"	", replace:"") +
+		replace@(match:"  +", replace:" ")
+	remove_illegal_characters := replace@(match:"[\\/|*<>?\":]", replace:"")
+	remove_dot_prefix := replace@(match:"^\.+", replace:"")
+	remove_section_specials := replace@(match:"[^A-Za-z0-9 _-]", replace:"")
+	normalize_section_dashes := replace@(match:"[—–−]", replace:"-")
+	clean_name := remove_tags + remove_breaks + remove_controls + remove_tabs + trim + remove_illegal_characters
+	clean_name_keep_dashes := remove_tags + remove_breaks + remove_controls + remove_tabs + trim
+	clean_section_name := remove_tags + remove_breaks + remove_controls + remove_tabs + remove_dot_prefix + remove_section_specials + trim
+	section_header_strip_prefix := replace@(match:"^ *---+ *", replace:"")
+	section_header_strip_suffix := replace@(match:" *---+ *$", replace:"")
+	is_section_header := {
+		normalized_name := normalize_section_dashes(clean_name_keep_dashes(card.name))
+		if filter_text@(match:"^ *---+.+---+ *$")(normalized_name) != "" then true else false
+	}
+	section_folder_name := {
+		normalized_name := normalize_section_dashes(clean_name_keep_dashes(card.name))
+		section_name := clean_section_name(section_header_strip_suffix(section_header_strip_prefix(normalized_name)))
+		if section_name != "" then section_name else "Standard"
+	}
+	has_visible_special_text := { trim(remove_tags(card.special_text)) != "" }
+	has_visible_special_text_2 := { trim(remove_tags(card.special_text_2)) != "" }
+	has_visible_flavor_text := { trim(remove_tags(card.flavor_text)) != "" }
+	has_visible_flavor_text_2 := { trim(remove_tags(card.flavor_text_2)) != "" }
+	resolved_rules_text := { if has_visible_special_text() then card.special_text else card.rule_text }
+	resolved_rules_text_2 := { if has_visible_special_text_2() then card.special_text_2 else card.rule_text_2 }
+	resolved_flavor_text := { if has_visible_flavor_text() then card.flavor_text else "" }
+	resolved_flavor_text_2 := { if has_visible_flavor_text_2() then card.flavor_text_2 else "" }
+	exporter_num_filter := filter_text@(match:"!num [^\n!]+")
+	exporter_num_grabber := replace@(match:"!num ", replace:"")
+	corrected_card_number := {
+		if exporter_num_grabber(exporter_num_filter(card.notes)) != "" then exporter_num_grabber(exporter_num_filter(card.notes)) else if card.custom_card_number != "" then trim_zeroes(card.custom_card_number) else card_number()
+	}
+	image_name_base := { clean_name(card.name) + "-" + clean_name(card.illustrator) }
+	matching_image_cards := {
+		filter_list(sorted_cards, filter:{
+			filter_text@(match:"^ *---+.+---+ *$")(normalize_section_dashes(clean_name_keep_dashes(input.name))) == ""
+			and (clean_name(input.name) + "-" + clean_name(input.illustrator)) == image_name_base()
+		})
+	}
+	image_duplicate_index := {
+		position(of:card, in:matching_image_cards())
+		- position(of:matching_image_cards()[0], in:matching_image_cards())
+	}
+	image_name := {
+		image_name_base()
+		+ (if image_duplicate_index() > 0 then "-" + image_duplicate_index() else "")
+	}
+	sorted_cards := sort_list(cards, order_by: {
+		if exporter_num_grabber(exporter_num_filter(input.notes)) != "" then exporter_num_grabber(exporter_num_filter(input.notes)) else if input.custom_card_number != "" then trim_zeroes(input.custom_card_number) else if input.card_number != "" then trim_zeroes(input.card_number) else input.name
+	})
+	write_header := {
+		"" + 
+		"Set: " + set.set_code + "\n" +
+		"Name" + separator +
+		"Mana Cost" + separator +
+		"Type" + separator +
+		"Rarity" + separator +
+		"Rules Text" + separator +
+		"Flavor Text" + separator +
+		"Power" + separator +
+		"Toughness" + separator +
+		"Loyalty" + separator +
+		"Illustrator" + separator +
+		"Card Number" + separator +
+		"Notes" + separator + "[BACK FACE]" + separator +
+		"Name 2" + separator +
+		"Mana Cost 2" + separator +
+		"Type 2" + separator +
+		"Rules Text 2" + separator +
+		"Flavor Text 2" + separator +
+		"Power 2" + separator +
+		"Toughness 2" + separator +
+		"Loyalty 2" + separator +
+		"Illustrator 2" + separator +
+		"Card Number 2" + separator +
+		"Notes 2" + separator +
+		"\n"
+	}
+	write_card := {
+		"" + 
+		card_name() + separator +
+		card.casting_cost + separator +
+		card.type + separator +
+		card.rarity + separator +
+		pull_breaks(resolved_rules_text()) + separator +
+		pull_breaks(resolved_flavor_text()) + separator +
+		card.power + separator +
+		card.toughness + separator +
+		card.loyalty + separator +
+		card.illustrator + separator +
+		corrected_card_number() + separator +
+		pull_breaks(card.notes) + separator +
+		card.name_2 + separator +
+		card.casting_cost_2 + separator +
+		card.type_2 + separator +
+		card.rarity_2 + separator +
+		pull_breaks(resolved_rules_text_2()) + separator +
+		pull_breaks(resolved_flavor_text_2()) + separator +
+		card.power_2 + separator +
+		card.toughness_2 + separator +
+		card.loyalty_2 + separator +
+		card.illustrator_2 + separator +
+		corrected_card_number() + separator +
+		pull_breaks(card.notes) + separator +
+		"\n"
+	}
+	write_cards := for each card in sorted_cards do (if is_section_header() then "" else write_card())
+	write_images := {
+		current_section := "Standard"
+		log_lines := ""
+		for each card in sorted_cards do (
+			normalized_name := normalize_section_dashes(clean_name_keep_dashes(card.name))
+			header_matches := if filter_text@(match:"^ *---+.+---+ *$")(normalized_name) != "" then true else false
+			if header_matches then (
+				extracted_section := clean_section_name(section_header_strip_suffix(section_header_strip_prefix(normalized_name)))
+				current_section := if extracted_section != "" then extracted_section else "Standard"
+				log_lines := log_lines
+					+ "[HEADER] raw=\"" + pull_breaks(card.name) + "\""
+					+ " normalized=\"" + normalized_name + "\""
+					+ " matched=true"
+					+ " extracted=\"" + current_section + "\"\n"
+				""
+			) else (
+				current_folder := if card.rarity == "Masterpiece" then "Masterpiece" else if card.rarity == "masterpiece" then "Masterpiece" else current_section
+				image_file := "images/" + current_folder + "/" + image_name() + ".png"
+				write_image_file(card, file: image_file)
+				log_lines := log_lines
+					+ "[CARD] name=\"" + pull_breaks(card.name) + "\""
+					+ " matched=false"
+					+ " folder=\"" + current_folder + "\""
+					+ " image=\"" + image_file + "\""
+					+ " number=\"" + corrected_card_number() + "\"\n"
+				""
+			)
+		)
+		if options.write_debug_log then write_text_file(log_lines, file: "log.txt") else ""
+		""
+	}
+	to_string(to_text(write_images() + write_header() + write_cards))
