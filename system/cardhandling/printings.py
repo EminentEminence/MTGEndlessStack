@@ -9,6 +9,7 @@ class printings:
         Initializes the printings class with an empty list of printings.
         '''
         self.printings = []
+        self.cardName = ""
 
 class printing:
     '''
