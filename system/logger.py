@@ -3,7 +3,7 @@ import atexit
 from enum import Enum
 from datetime import datetime
 
-LogLocation = "logs/"
+LogLocation = "Logs/"
 MAX_LOGS = 10
 
 class LogLevel(Enum):
@@ -16,9 +16,12 @@ class logger:
     '''
     A simple logger class that can be used to log messages to a file. This is used for debugging purposes and to keep track of any errors that may occur during the execution of the program.
     '''
+    _session_filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
+
     def __init__(self, LogHeader: str):
         self.LogHeader = LogHeader
         self.logContent = ""
+        self._has_saved = False
         atexit.register(self.saveLog)
 
     
@@ -41,18 +44,28 @@ class logger:
         Saves the log content to a file in the logs directory. The filename is generated based on the log header and the current date and time.
         '''
     
+        if self._has_saved:
+            return
+
+        if not self.logContent:
+            return
+
         #Create logs directory if it doesn't exist
         if not os.path.exists(LogLocation):
             os.makedirs(LogLocation)
 
-        #Generate filename based on log header and current date and time
-        filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
+        #Use a single per-process file so all logger instances write to one log.
+        filename = logger._session_filename
         filepath = os.path.join(LogLocation, filename)
 
-        #Save log content to file
-        with open(filepath, "w") as f:
-            f.write(f"---{self.LogHeader}---\n\n")
+        #Append each logger section rather than overwrite earlier logger output.
+        with open(filepath, "a", encoding="utf-8") as f:
+            f.write(f"---{self.LogHeader}---\n")
             f.write(self.logContent)
+            f.write("\n")
+
+        #Avoid duplicate writes when saveLog is called by terminal flow and atexit.
+        self._has_saved = True
 
         #Enforce max log count - delete oldest if over limit
         logs = sorted(
