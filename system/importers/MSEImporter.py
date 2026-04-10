@@ -12,6 +12,33 @@ from system.logger import logger, LogLevel
 
 MSElogger = logger("MSE Importer")
 
+
+def getDisabledMods() -> set[str]:
+    '''
+    Reads disabled mod names from system/settings/disabledMods.txt.
+
+    Returns:
+        set[str]: A set of disabled mod names.
+    '''
+
+    disabled_mods_path = os.path.join(PROJECT_ROOT, "system", "settings", "disabledMods.txt")
+
+    if not os.path.exists(disabled_mods_path):
+        MSElogger.log(
+            f"disabledMods.txt not found at '{disabled_mods_path}'. Proceeding with all mods enabled.",
+            LogLevel.WARNING,
+        )
+        return set()
+
+    with open(disabled_mods_path, "r", encoding="utf-8") as file:
+        disabled_mods = {
+            line.strip()
+            for line in file
+            if line.strip() != "" and not line.strip().startswith("#")
+        }
+
+    return disabled_mods
+
 def MSEImport() -> tuple[list[Card], list[printings]] | None:
     '''
     A function to import cards from Magic Set Editor (MSE).
@@ -21,8 +48,17 @@ def MSEImport() -> tuple[list[Card], list[printings]] | None:
     '''
     
     AvailableMods = [mod for mod in os.listdir("Mods/") if os.path.isdir(os.path.join("Mods/", mod))]
-    DisabledMods = [] #This will be used to store any mods that the user has disabled in the settings menu (this is just a placeholder, actual implementation will depend on how you want to handle mod settings)
+    DisabledMods = getDisabledMods()
     EnabledMods = [mod for mod in AvailableMods if mod not in DisabledMods]
+
+    for disabled_mod in sorted(DisabledMods):
+        if disabled_mod in AvailableMods:
+            MSElogger.log(f"Mod '{disabled_mod}' is disabled and will be skipped.", LogLevel.INFO)
+        else:
+            MSElogger.log(
+                f"Mod '{disabled_mod}' is listed in disabledMods.txt but was not found in Mods/.",
+                LogLevel.WARNING,
+            )
 
     MSElogger.log(f"{len(EnabledMods)} mods enabled.", LogLevel.INFO)
     moddedCards = []
