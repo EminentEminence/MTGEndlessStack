@@ -199,18 +199,18 @@ def getCardsFromFile(modName: str) -> list[Card] | None:
                 continue
 
             card = Card()
-            card.set("name", cardDetails[0])
-            card.set("manaCost", cardDetails[1])
-            card.set("type", cardDetails[2])
-            card.set("rarity", cardDetails[3])
-            card.set("rulesText", cardDetails[4])
-            card.set("flavourText", cardDetails[5])
-            card.set("power", cardDetails[6] if cardDetails[6] != "" else None)
-            card.set("toughness", cardDetails[7] if cardDetails[7] != "" else None)
-            card.set("loyalty", cardDetails[8] if cardDetails[8] != "" else None)
+            card.setName(cardDetails[0])
+            card.setManaCost(cardDetails[1])
+            card.setType(cardDetails[2])
+            card.setRarity(cardDetails[3])
+            card.setRulesText(cardDetails[4])
+            card.setFlavourText(cardDetails[5])
+            card.setPower(cardDetails[6] if cardDetails[6] != "" else None)
+            card.setToughness(cardDetails[7] if cardDetails[7] != "" else None)
+            card.setLoyalty(cardDetails[8] if cardDetails[8] != "" else None)
             
             #Check for Incomplete Cards
-            if card.get("type") == "" or str(card.get("power")) + str(card.get("toughness")) + str(card.get("loyalty")) + str(card.get("rulesText")) == "":
+            if card.getType() == "" or str(card.getPower()) + str(card.getToughness()) + str(card.getLoyalty()) + str(card.getRulesText()) == "":
                 MSElogger.log(f"Incomplete card data for card '{card.name}' in mod '{modName} - Skipping'.", LogLevel.WARNING)
                 print(f"Incomplete card data for card '{card.name}' in mod '{modName} - Skipping'.")
                 continue

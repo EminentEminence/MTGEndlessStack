@@ -10,9 +10,9 @@ class Card:
         rarity (str): The rarity of the card.
         rulesText (str): The rules text of the card.
         flavourText (str): The flavor text of the card.
-        power (str): The power of the card (if applicable).
-        toughness (str): The toughness of the card (if applicable).
-        loyalty (str): The loyalty of the card (if applicable).
+        power (int): The power of the card (if applicable).
+        toughness (int): The toughness of the card (if applicable).
+        loyalty (int): The loyalty of the card (if applicable).
         frontPrintings (printings): The printings of the front face of the card.
         
         name2 (str): The name of the back face of the card (if applicable).
@@ -21,9 +21,9 @@ class Card:
         rarity2 (str): The rarity of the back face of the card (if applicable).
         rulesText2 (str): The rules text of the back face of the card (if applicable).
         flavourText2 (str): The flavor text of the back face of the card (if applicable).
-        power2 (str): The power of the back face of the card (if applicable).
-        toughness2 (str): The toughness of the back face of the card (if applicable).
-        loyalty2 (str): The loyalty of the back face of the card (if applicable).
+        power2 (int): The power of the back face of the card (if applicable).
+        toughness2 (int): The toughness of the back face of the card (if applicable).
+        loyalty2 (int): The loyalty of the back face of the card (if applicable).
         backPrintings (printings): The printings of the back face of the card (if applicable).
         '''
     
@@ -88,41 +88,145 @@ class Card:
             
         return cmc
 
-    def get(self,attribute: str,side="front") -> object:
+    def _coerce_optional_int(self, value: int | str | None) -> int | None:
         '''
-        gets the value of the specified attribute for the specified side of the card.
-        Replaces the need for having multiple Getters for each attribute and handles the special case of calculating CMC without needing to store it as an attribute.
-        Also simplifies getting information for the back face of the card by using the same references as the front.
+        Converts value to an int when possible. Empty strings and None become None.
+        '''
+        if value is None:
+            return None
 
-        Args:
-            attribute (str): The name of the attribute to get.
-            side (str, optional): The side of the card to get the attribute from ("front" or "back"). Defaults to "front".
-        
-        Returns:
-            object: The value of the specified attribute for the specified side of the card.
-        '''
-        if not hasattr(self, attribute):
-            raise AttributeError(f"'Card' object has no attribute '{attribute}'")
-        elif attribute == "cmc":
-            if side == "front":
-                return Card._calcCMC(self, self.manaCost)
-            elif side == "back":
-                return Card._calcCMC(self, self.manaCost2) if self.manaCost2 is not None else None
-            else:
-                raise ValueError(f"Invalid side '{side}'")
-        
-        return getattr(self, attribute if side == "front" else attribute+"2")
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped == "":
+                return None
+            return int(stripped)
 
-    def set(self,attribute: str,value : object ,side="front"):
-        '''
-        sets the value of the specified attribute for the specified side of the card.
+        return int(value)
 
-        Args:
-            attribute (str): The name of the attribute to set.
-            value (object): The value to set for the attribute.
-            side (str, optional): The side of the card to set the attribute for ("front" or "back"). Defaults to "front".
-        '''
-        if not hasattr(self, attribute):
-            raise AttributeError(f"'Card' object has no attribute '{attribute}'")
-        
-        setattr(self, attribute if side == "front" else attribute+"2", value)
+    def getName(self) -> str:
+        return self.name
+
+    def setName(self, value: object) -> None:
+        self.name = str(value)
+
+    def getManaCost(self) -> str:
+        return self.manaCost
+
+    def setManaCost(self, value: object) -> None:
+        self.manaCost = str(value)
+
+    def getType(self) -> str | int:
+        return self.type if self.type is not None else -1
+
+    def setType(self, value: object) -> None:
+        self.type = None if value is None else str(value)
+
+    def getRarity(self) -> str | int:
+        return self.rarity if self.rarity is not None else -1
+
+    def setRarity(self, value: object) -> None:
+        self.rarity = None if value is None else str(value)
+
+    def getRulesText(self) -> str | int:
+        return self.rulesText if self.rulesText is not None else -1
+
+    def setRulesText(self, value: object) -> None:
+        self.rulesText = None if value is None else str(value)
+
+    def getFlavourText(self) -> str | int:
+        return self.flavourText if self.flavourText is not None else -1
+
+    def setFlavourText(self, value: object) -> None:
+        self.flavourText = None if value is None else str(value)
+
+    def getPower(self) -> int:
+        return self.power if self.power is not None else -1
+
+    def setPower(self, value: int | str | None) -> None:
+        self.power = self._coerce_optional_int(value)
+
+    def getToughness(self) -> int:
+        return self.toughness if self.toughness is not None else -1
+
+    def setToughness(self, value: int | str | None) -> None:
+        self.toughness = self._coerce_optional_int(value)
+
+    def getLoyalty(self) -> int:
+        return self.loyalty if self.loyalty is not None else -1
+
+    def setLoyalty(self, value: int | str | None) -> None:
+        self.loyalty = self._coerce_optional_int(value)
+
+    def getFrontPrintings(self) -> printings | int:
+        return self.frontPrintings if self.frontPrintings is not None else -1
+
+    def setFrontPrintings(self, value: printings) -> None:
+        self.frontPrintings = value
+
+    def getName2(self) -> str | int:
+        return self.name2 if self.name2 is not None else -1
+
+    def setName2(self, value: object) -> None:
+        self.name2 = None if value is None else str(value)
+
+    def getManaCost2(self) -> str | int:
+        return self.manaCost2 if self.manaCost2 is not None else -1
+
+    def setManaCost2(self, value: object) -> None:
+        self.manaCost2 = None if value is None else str(value)
+
+    def getType2(self) -> str | int:
+        return self.type2 if self.type2 is not None else -1
+
+    def setType2(self, value: object) -> None:
+        self.type2 = None if value is None else str(value)
+
+    def getRarity2(self) -> str | int:
+        return self.rarity2 if self.rarity2 is not None else -1
+
+    def setRarity2(self, value: object) -> None:
+        self.rarity2 = None if value is None else str(value)
+
+    def getRulesText2(self) -> str | int:
+        return self.rulesText2 if self.rulesText2 is not None else -1
+
+    def setRulesText2(self, value: object) -> None:
+        self.rulesText2 = None if value is None else str(value)
+
+    def getFlavourText2(self) -> str | int:
+        return self.flavourText2 if self.flavourText2 is not None else -1
+
+    def setFlavourText2(self, value: object) -> None:
+        self.flavourText2 = None if value is None else str(value)
+
+    def getPower2(self) -> int:
+        return self.power2 if self.power2 is not None else -1
+
+    def setPower2(self, value: int | str | None) -> None:
+        self.power2 = self._coerce_optional_int(value)
+
+    def getToughness2(self) -> int:
+        return self.toughness2 if self.toughness2 is not None else -1
+
+    def setToughness2(self, value: int | str | None) -> None:
+        self.toughness2 = self._coerce_optional_int(value)
+
+    def getLoyalty2(self) -> int:
+        return self.loyalty2 if self.loyalty2 is not None else -1
+
+    def setLoyalty2(self, value: int | str | None) -> None:
+        self.loyalty2 = self._coerce_optional_int(value)
+
+    def getBackPrintings(self) -> printings | int:
+        return self.backPrintings if self.backPrintings is not None else -1
+
+    def setBackPrintings(self, value: printings) -> None:
+        self.backPrintings = value
+
+    def getCMC(self) -> int:
+        return Card._calcCMC(self, self.manaCost)
+
+    def getCMC2(self) -> int:
+        if self.manaCost2 is None:
+            return -1
+        return Card._calcCMC(self, self.manaCost2)

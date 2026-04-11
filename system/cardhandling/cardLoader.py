@@ -41,23 +41,23 @@ def _card_signature(card: Card) -> tuple[str, ...]:
 	"""Build a normalized tuple of comparable card fields used for duplicate validation."""
 	# Signature excludes name so duplicate-name cards can be validated for equality.
 	return (
-		_safe_str(card.get("manaCost")),
-		_safe_str(card.get("type")),
-		_safe_str(card.get("rarity")),
-		_safe_str(card.get("rulesText")),
-		_safe_str(card.get("flavourText")),
-		_safe_str(card.get("power")),
-		_safe_str(card.get("toughness")),
-		_safe_str(card.get("loyalty")),
-		_safe_str(card.get("name2")),
-		_safe_str(card.get("manaCost2")),
-		_safe_str(card.get("type2")),
-		_safe_str(card.get("rarity2")),
-		_safe_str(card.get("rulesText2")),
-		_safe_str(card.get("flavourText2")),
-		_safe_str(card.get("power2")),
-		_safe_str(card.get("toughness2")),
-		_safe_str(card.get("loyalty2")),
+		_safe_str(card.getManaCost()),
+		_safe_str(card.getType()),
+		_safe_str(card.getRarity()),
+		_safe_str(card.getRulesText()),
+		_safe_str(card.getFlavourText()),
+		_safe_str(card.getPower()),
+		_safe_str(card.getToughness()),
+		_safe_str(card.getLoyalty()),
+		_safe_str(card.getName2()),
+		_safe_str(card.getManaCost2()),
+		_safe_str(card.getType2()),
+		_safe_str(card.getRarity2()),
+		_safe_str(card.getRulesText2()),
+		_safe_str(card.getFlavourText2()),
+		_safe_str(card.getPower2()),
+		_safe_str(card.getToughness2()),
+		_safe_str(card.getLoyalty2()),
 	)
 
 
@@ -70,27 +70,27 @@ def _build_carddata_row(card: Card) -> str:
 	"""Serialize a Card object into a single cardData.txt line using the expected column order."""
 	# Match the Deadlock cardData structure while filling only known fields.
 	columns = [
-		_safe_str(card.get("name")),
-		_safe_str(card.get("manaCost")),
-		_safe_str(card.get("type")),
-		_safe_str(card.get("rarity")),
-		_safe_str(card.get("rulesText")),
-		_safe_str(card.get("flavourText")),
-		_safe_str(card.get("power")),
-		_safe_str(card.get("toughness")),
-		_safe_str(card.get("loyalty")),
+		_safe_str(card.getName()),
+		_safe_str(card.getManaCost()),
+		_safe_str(card.getType()),
+		_safe_str(card.getRarity()),
+		_safe_str(card.getRulesText()),
+		_safe_str(card.getFlavourText()),
+		_safe_str(card.getPower()),
+		_safe_str(card.getToughness()),
+		_safe_str(card.getLoyalty()),
 		"",
 		"",
 		"",
 		"",
-		_safe_str(card.get("name2")),
-		_safe_str(card.get("manaCost2")),
-		_safe_str(card.get("type2")),
-		_safe_str(card.get("rulesText2")),
-		_safe_str(card.get("flavourText2")),
-		_safe_str(card.get("power2")),
-		_safe_str(card.get("toughness2")),
-		_safe_str(card.get("loyalty2")),
+		_safe_str(card.getName2()),
+		_safe_str(card.getManaCost2()),
+		_safe_str(card.getType2()),
+		_safe_str(card.getRulesText2()),
+		_safe_str(card.getFlavourText2()),
+		_safe_str(card.getPower2()),
+		_safe_str(card.getToughness2()),
+		_safe_str(card.getLoyalty2()),
 		"",
 		"",
 		"",
@@ -225,7 +225,7 @@ def compileActiveCards() -> list[Card]:
 		source_printings_attached: set[str] = set()
 
 		for card in source_cards:
-			card_name = _safe_str(card.get("name"))
+			card_name = _safe_str(card.getName())
 			incoming_signature = _card_signature(card)
 
 			if card_name not in merged_cards:
@@ -262,13 +262,13 @@ def compileActiveCards() -> list[Card]:
 
 	sorted_cards = sorted(
 		merged_cards.values(),
-		key=lambda card: _safe_str(card.get("name")).lower(),
+		key=lambda card: _safe_str(card.getName()).lower(),
 	)
 	_save_card_data(sorted_cards)
 	saved_printings = _save_images(merged_printings)
 
 	for card in sorted_cards:
-		name = _safe_str(card.get("name"))
+		name = _safe_str(card.getName())
 		front_group = printings()
 		front_group.cardName = name
 		front_group.printings = saved_printings.get(name, [])

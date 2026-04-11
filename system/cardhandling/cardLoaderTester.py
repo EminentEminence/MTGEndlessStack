@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Callable
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if PROJECT_ROOT not in sys.path:
@@ -66,8 +67,20 @@ def log_loaded_cards_table(cards: list[Card] | None = None) -> list[Card]:
 	CardLoadingTesterLogger.log(separator, LogLevel.INFO)
 
 	for card in loaded_cards:
+		getter_map: dict[str, Callable[[], object]] = {
+			"name": card.getName,
+			"manaCost": card.getManaCost,
+			"type": card.getType,
+			"rarity": card.getRarity,
+			"power": card.getPower,
+			"toughness": card.getToughness,
+			"loyalty": card.getLoyalty,
+			"rulesText": card.getRulesText,
+			"name2": card.getName2,
+		}
+
 		row = " | ".join(
-			_fit_text(card.get(attribute), width)
+			_fit_text(getter_map[attribute](), width)
 			for _, width, attribute in columns
 		)
 		print(row)
