@@ -1,0 +1,194 @@
+{
+  "examples": [
+    {
+      "rules_text": "Shining Wonder \u2014 RR: Choose up to this creature's power targets. A target may be chosen more than once. This creature deals 1 damage to each of those targets in the order chosen. If any of those targets becomes illegal before it is dealt damage this way, counter this ability.",
+      "dsl_output": "activeAbility(action=forEach(target(num=card.getPower(),repeat=True),action=damage(forEachTarget,value=1),end=isIllegal(forEachTarget)),cost='RR')"
+    },
+    {
+      "rules_text": "This spell costs 1 more to cast for each target beyond the first. /n Zoltraak deals X damage divided evenly, rounded down, among any number of targets. If the target is a demon, it deals double that damage instead.",
+      "dsl_output": "beforeCast(condition(card.getOwner().getMana,len(card.targets),comparison='GreaterEqual',onFalse=counterspell(card))) \\n onCast(forEach(card.targets,action=condition(forEachTarget.getType(),'Demon',comparison='Contains',onFalse=damage(forEachTarget,divide(card.manaSpent.getX(),len(card.targets),round=\"Down\")),onTrue=damage(forEachTarget,multiply(divide(card.manaSpent.getX(),len(card.targets),round=\"Down\"),2)))))"
+    },
+    {
+      "rules_text": "T1: Tap target creature. It loses all abilities until the beginning of its controllers upkeep.",
+      "dsl_output": "activeAbility(action=forEach(card.targets,tapCard(forEachTarget)),forEach(removeAbilities(forEachTarget,until=forEachTarget.getController().upkeep)),cost='1',tap=True)"
+    },
+    {
+      "rules_text": "Deathtouch, Menace \\n 2U: Put a Empathy counter on target Mage or Wizard creature. \\n \u00dcbel, Empathetic Psycopath has all the activated abilities of creatures with a Empathy counter on them",
+      "dsl_output": "keyWords('Deathtouch', 'Menace') \\n activeAbility(forEach(target(filter='type:Mage OR type:Wizard'),putCounter('Empathy')),cost='2U') \\n passiveAbility(forEach(target(filter='counter:Empathy'),card.addAbilities(target.getAbilities())))"
+    },
+    {
+      "rules_text": "When The Hero\u2019s Journey enters the battlefield, discard your hand. If you do, search your library for a Cleric, Hero, Mage, and Warrior creature card with different names, reveal them, and put them into your hand. Then shuffle. \\n This card can be your commander.",
+      "dsl_output": "onCast(pay(discardHand=True,onPay=(player.addCardToHand(library.search('type:Cleric',maxResults=1),reveal=True),player.addCardToHand(library.search('type:Hero', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Mage', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Warrior',maxResults=1),reveal=True),library.shuffle()))) \\n passiveAbility(canBeCommander(True))"
+    },
+    {
+      "rules_text": "Whenever an opponent casts a spell during your turn, counter it unless its controller pays 2. \\n Whenever you cast an instant or sorcery during an opponent's turn, draw a card, then discard a card.",
+      "dsl_output": "onCast(condition(game.getTurnPlayer(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getController(),card.getController(),comparison='NotEqual',onTrue=counterUnlessPay(castSpell,cost='2')))) \\n onCast(condition(game.getTurnPlayer(),card.getController(),comparison='NotEqual',onTrue=condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=(card.getController().draw(1),card.getController().discard(1))))))"
+    },
+    {
+      "rules_text": "Scry 3 \\n You may cast an instant or sorcery spell with mana value 2 or less from your hand without paying its mana cost.",
+      "dsl_output": "onCast(scry(3)) \\n onCast(castFromHand(filter='type:Instant OR type:Sorcery',maxManaValue=2,withoutPay=True,optional=True))"
+    },
+    {
+      "rules_text": "Draw two cards, then discard two cards.",
+      "dsl_output": "onCast((card.getController().draw(2),card.getController().discard(2)))"
+    },
+    {
+      "rules_text": "Flashback 2R",
+      "dsl_output": "passiveAbility(flashback(cost='2R'))"
+    },
+    {
+      "rules_text": "Whenever you cast an instant or sorcery spell, exile the top card of your library. \\n You may play instant and sorcery cards exiled with {cardName}.",
+      "dsl_output": "onCast(condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=exileTop(card.getController().library,amount=1,exiledWith='{cardName}'))) \\n passiveAbility(playFromExile(filter='type:Instant OR type:Sorcery',exiledWith='{cardName}'))"
+    },
+    {
+      "rules_text": "Whenever you cast an instant or sorcery spell with mana value 1 or less, draw a card. \\n T2: Exile target instant or sorcery card from your graveyard. Add one mana of any color.",
+      "dsl_output": "onCast(condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=condition(castSpell.getManaValue(),1,comparison='LessEqual',onTrue=card.getController().draw(1))))) \\n activeAbility(action=(forEach(target(filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=exile(forEachTarget)),card.getController().addMana('Any',1)),cost='2',tap=True)"
+    },
+    {
+      "rules_text": "T2: Create a copy of {cardName} except it isn't legendary and has haste. At the beginning of your end step, exile the copy.",
+      "dsl_output": "activeAbility(action=(createCopy('{cardName}',legendary=False),createdCopy.addAbilitiy('Haste'),atBeginningEndStep(exile(createdCopy))),cost='2',tap=True)"
+    },
+    {
+      "rules_text": "Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead.",
+      "dsl_output": "onCast((surveil(2),forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,until=endTurn,optional=True,exileIfWouldBePutIntoGraveyard=True))))"
+    },
+    {
+      "rules_text": "This spell costs {1} less to cast for each instant and sorcery card in your graveyard. \\n Reach \\n Whenever {cardName} attacks, you may cast target instant or sorcery card from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead.",
+      "dsl_output": "beforeCast(reduceCostForEach(card,cost='1',zone='graveyard',filter='type:Instant OR type:Sorcery')) \\n keyWords('Reach') \\n onAttack(condition(attackingCreature,card,comparison='Equal',onTrue=forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,optional=True,withoutPay=True,exileIfWouldBePutIntoGraveyard=True))))"
+    },
+    {
+      "rules_text": "Trample, reach \\n Converge - This creature enters with a +1/+1 counter on it for each color of mana spent to cast it.",
+      "dsl_output": "keyWords('Trample','Reach') \\n onCast(addCounter(card,'+1/+1',num=colorCount(card.manaSpent)))"
+    },
+    {
+      "rules_text": "Return target nonland permanent card from your graveyard to the battlefield. \\n Paradigm",
+      "dsl_output": "onCast(forEach(target(num=1,filter='zone:graveyard AND type:Permanent AND NOT type:Land'),action=returnToBattlefield(forEachTarget))) \\n keyWords('Paradigm')"
+    },
+    {
+      "rules_text": "Create two 2/2 red and white Spirit creature tokens. Then if this spell was cast from anywhere other than your hand, put a +1/+1 counter on each Spirit you control. \\n Flashback {4}{W}{W}",
+      "dsl_output": "onCast((createToken(name='Spirit',type='Creature - Spirit',colors=['R','W'],power=2,toughness=2,num=2),condition(card.getCastZone(),'Hand',comparison='NotEqual',onTrue=forEach(target(filter='controller:self AND type:Spirit'),action=addCounter(forEachTarget,'+1/+1',num=1))))) \\n passiveAbility(flashback(cost='4WW'))"
+    }
+  ],
+  "templates": [
+    {
+      "rules_segment": "Shining Wonder \u2014 RR: Choose up to this creature's power targets. A target may be chosen more than once. This creature deals 1 damage to each of those targets in the order chosen. If any of those targets becomes illegal before it is dealt damage this way, counter this ability.",
+      "output_segment": "activeAbility(forEach(target(num=card.getPower(),repeat=True),action=damage(forEachTarget,value=1),end=isIllegal(forEachTarget)),cost='RR')"
+    },
+    {
+      "rules_segment": "This spell costs 1 more to cast for each target beyond the first.",
+      "output_segment": "beforeCast(condition(card.getOwner().getMana,len(card.targets),comparison='GreaterEqual',onFalse=counterspell(card)))"
+    },
+    {
+      "rules_segment": "Zoltraak deals X damage divided evenly, rounded down, among any number of targets.",
+      "output_segment": "onCast(forEach(card.targets,action=condition(forEachTarget.getType(),'Demon',comparison='Contains',onFalse=damage(forEachTarget,divide(card.manaSpent.getX(),len(card.targets),round=\"Down\")),onTrue=damage(forEachTarget,multiply(divide(card.manaSpent.getX(),len(card.targets),round=\"Down\"),2)))))"
+    },
+    {
+      "rules_segment": "T1: Tap target creature. It loses all abilities until the beginning of its controllers upkeep.",
+      "output_segment": "activeAbility(forEach(card.targets,tapCard(forEachTarget)),forEach(removeAbilities(forEachTarget,until=forEachTarget.getController().upkeep)),cost='1',tap=True)"
+    },
+    {
+      "rules_segment": "Deathtouch, Menace",
+      "output_segment": "keyWords('Deathtouch', 'Menace')"
+    },
+    {
+      "rules_segment": "2U: Put a Empathy counter on target Mage or Wizard creature.",
+      "output_segment": "activeAbility(forEach(target(filter='type:Mage OR type:Wizard'),putCounter('Empathy')),cost='2U')"
+    },
+    {
+      "rules_segment": "\u00dcbel, Empathetic Psycopath has all the activated abilities of creatures with a Empathy counter on them",
+      "output_segment": "passiveAbility(forEach(target(filter='counter:Empathy'),card.addAbilities(target.getAbilities())))"
+    },
+    {
+      "rules_segment": "When The Hero\u2019s Journey enters the battlefield, discard your hand.",
+      "output_segment": "onCast(pay(discardHand=True,onPay=(player.addCardToHand(library.search('type:Cleric',maxResults=1),reveal=True),player.addCardToHand(library.search('type:Hero', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Mage', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Warrior',maxResults=1),reveal=True),library.shuffle())))"
+    },
+    {
+      "rules_segment": "If you do, search your library for a Cleric, Hero, Mage, and Warrior creature card with different names, reveal them, and put them into your hand.",
+      "output_segment": "passiveAbility(canBeCommander(True))"
+    },
+    {
+      "rules_segment": "Whenever an opponent casts a spell during your turn, counter it unless its controller pays 2.",
+      "output_segment": "onCast(condition(game.getTurnPlayer(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getController(),card.getController(),comparison='NotEqual',onTrue=counterUnlessPay(castSpell,cost='2'))))"
+    },
+    {
+      "rules_segment": "Whenever you cast an instant or sorcery during an opponent's turn, draw a card, then discard a card.",
+      "output_segment": "onCast(condition(game.getTurnPlayer(),card.getController(),comparison='NotEqual',onTrue=condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=(card.getController().draw(1),card.getController().discard(1))))))"
+    },
+    {
+      "rules_segment": "Scry 3",
+      "output_segment": "onCast(scry(3))"
+    },
+    {
+      "rules_segment": "You may cast an instant or sorcery spell with mana value 2 or less from your hand without paying its mana cost.",
+      "output_segment": "onCast(castFromHand(filter='type:Instant OR type:Sorcery',maxManaValue=2,withoutPay=True,optional=True))"
+    },
+    {
+      "rules_segment": "Draw two cards, then discard two cards.",
+      "output_segment": "onCast((card.getController().draw(2),card.getController().discard(2)))"
+    },
+    {
+      "rules_segment": "Flashback 2R",
+      "output_segment": "passiveAbility(flashback(cost='2R'))"
+    },
+    {
+      "rules_segment": "Whenever you cast an instant or sorcery spell, exile the top card of your library.",
+      "output_segment": "onCast(condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=exileTop(card.getController().library,amount=1,exiledWith='{cardName}')))"
+    },
+    {
+      "rules_segment": "You may play instant and sorcery cards exiled with {cardName}.",
+      "output_segment": "passiveAbility(playFromExile(filter='type:Instant OR type:Sorcery',exiledWith='{cardName}'))"
+    },
+    {
+      "rules_segment": "Whenever you cast an instant or sorcery spell with mana value 1 or less, draw a card.",
+      "output_segment": "onCast(condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=condition(castSpell.getManaValue(),1,comparison='LessEqual',onTrue=card.getController().draw(1)))))"
+    },
+    {
+      "rules_segment": "T2: Exile target instant or sorcery card from your graveyard.",
+      "output_segment": "activeAbility((forEach(target(filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=exile(forEachTarget)),card.getController().addMana('Any',1)),cost='2',tap=True)"
+    },
+    {
+      "rules_segment": "T2: Create a copy of {cardName} except it isn't legendary and has haste. At the beginning of your end step, exile the copy.",
+      "output_segment": "activeAbility((createCopy('{cardName}',legendary=False),createdCopy.addAbilitiy('Haste'),atBeginningEndStep(exile(createdCopy))),cost='2',tap=True)"
+    },
+    {
+      "rules_segment": "Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead.",
+      "output_segment": "onCast((surveil(2),forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,until=endTurn,optional=True,exileIfWouldBePutIntoGraveyard=True))))"
+    },
+    {
+      "rules_segment": "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.",
+      "output_segment": "beforeCast(reduceCostForEach(card,cost='1',zone='graveyard',filter='type:Instant OR type:Sorcery'))"
+    },
+    {
+      "rules_segment": "Reach",
+      "output_segment": "keyWords('Reach')"
+    },
+    {
+      "rules_segment": "Whenever {cardName} attacks, you may cast target instant or sorcery card from your graveyard without paying its mana cost.",
+      "output_segment": "onAttack(condition(attackingCreature,card,comparison='Equal',onTrue=forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,optional=True,withoutPay=True,exileIfWouldBePutIntoGraveyard=True))))"
+    },
+    {
+      "rules_segment": "Trample, reach",
+      "output_segment": "keyWords('Trample','Reach')"
+    },
+    {
+      "rules_segment": "Converge - This creature enters with a +1/+1 counter on it for each color of mana spent to cast it.",
+      "output_segment": "onCast(addCounter(card,'+1/+1',num=colorCount(card.manaSpent)))"
+    },
+    {
+      "rules_segment": "Return target nonland permanent card from your graveyard to the battlefield.",
+      "output_segment": "onCast(forEach(target(num=1,filter='zone:graveyard AND type:Permanent AND NOT type:Land'),action=returnToBattlefield(forEachTarget)))"
+    },
+    {
+      "rules_segment": "Paradigm",
+      "output_segment": "keyWords('Paradigm')"
+    },
+    {
+      "rules_segment": "Create two 2/2 red and white Spirit creature tokens.",
+      "output_segment": "onCast((createToken(name='Spirit',type='Creature - Spirit',colors=['R','W'],power=2,toughness=2,num=2),condition(card.getCastZone(),'Hand',comparison='NotEqual',onTrue=forEach(target(filter='controller:self AND type:Spirit'),action=addCounter(forEachTarget,'+1/+1',num=1)))))"
+    },
+    {
+      "rules_segment": "Then if this spell was cast from anywhere other than your hand, put a +1/+1 counter on each Spirit you control.",
+      "output_segment": "passiveAbility(flashback(cost='4WW'))"
+    }
+  ]
+}

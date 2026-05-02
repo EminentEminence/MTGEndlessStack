@@ -1,0 +1,51 @@
+# Rules interpreter test cases
+# Format: alternating lines of rules text then expected DSL output.
+# Blank lines and lines starting with '#' are ignored.
+
+# -----
+Shining Wonder — RR: Choose up to this creature's power targets. A target may be chosen more than once. This creature deals 1 damage to each of those targets in the order chosen. If any of those targets becomes illegal before it is dealt damage this way, counter this ability.
+activeAbility(action=forEach(target(num=card.getPower(),repeat=True),action=damage(forEachTarget,value=1),end=isIllegal(forEachTarget)),cost='RR')
+This spell costs 1 more to cast for each target beyond the first. /n Zoltraak deals X damage divided evenly, rounded down, among any number of targets. If the target is a demon, it deals double that damage instead.
+beforeCast(condition(card.getOwner().getMana,len(card.targets),comparison='GreaterEqual',onFalse=counterspell(card))) \n onCast(forEach(card.targets,action=condition(forEachTarget.getType(),'Demon',comparison='Contains',onFalse=damage(forEachTarget,divide(card.manaSpent.getX(),len(card.targets),round="Down")),onTrue=damage(forEachTarget,multiply(divide(card.manaSpent.getX(),len(card.targets),round="Down"),2)))))
+T1: Tap target creature. It loses all abilities until the beginning of its controllers upkeep.
+activeAbility(action=forEach(card.targets,tapCard(forEachTarget)),forEach(removeAbilities(forEachTarget,until=forEachTarget.getController().upkeep)),cost='1',tap=True)
+Deathtouch, Menace \n 2U: Put a Empathy counter on target Mage or Wizard creature. \n Übel, Empathetic Psycopath has all the activated abilities of creatures with a Empathy counter on them
+keyWords('Deathtouch', 'Menace') \n activeAbility(forEach(target(filter='type:Mage OR type:Wizard'),putCounter('Empathy')),cost='2U') \n passiveAbility(forEach(target(filter='counter:Empathy'),card.addAbilities(target.getAbilities())))
+When The Hero’s Journey enters the battlefield, discard your hand. If you do, search your library for a Cleric, Hero, Mage, and Warrior creature card with different names, reveal them, and put them into your hand. Then shuffle. \n This card can be your commander.
+onCast(pay(discardHand=True,onPay=(player.addCardToHand(library.search('type:Cleric',maxResults=1),reveal=True),player.addCardToHand(library.search('type:Hero', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Mage', maxResults=1),reveal=True),player.addCardToHand(library.search('type:Warrior',maxResults=1),reveal=True),library.shuffle()))) \n passiveAbility(canBeCommander(True))
+Whenever an opponent casts a spell during your turn, counter it unless its controller pays 2. \n Whenever you cast an instant or sorcery during an opponent's turn, draw a card, then discard a card.
+onCast(condition(game.getTurnPlayer(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getController(),card.getController(),comparison='NotEqual',onTrue=counterUnlessPay(castSpell,cost='2')))) \n onCast(condition(game.getTurnPlayer(),card.getController(),comparison='NotEqual',onTrue=condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=(card.getController().draw(1),card.getController().discard(1))))))
+Scry 3 \n You may cast an instant or sorcery spell with mana value 2 or less from your hand without paying its mana cost.
+onCast(scry(3)) \n onCast(castFromHand(filter='type:Instant OR type:Sorcery',maxManaValue=2,withoutPay=True,optional=True))
+Draw two cards, then discard two cards.
+onCast((card.getController().draw(2),card.getController().discard(2)))
+Flashback 2R
+passiveAbility(flashback(cost='2R'))
+Whenever you cast an instant or sorcery spell, exile the top card of your library. \n You may play instant and sorcery cards exiled with {cardName}.
+onCast(condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=exileTop(card.getController().library,amount=1,exiledWith='{cardName}'))) \n passiveAbility(playFromExile(filter='type:Instant OR type:Sorcery',exiledWith='{cardName}'))
+Whenever you cast an instant or sorcery spell with mana value 1 or less, draw a card. \n T2: Exile target instant or sorcery card from your graveyard. Add one mana of any color.
+onCast(condition(castSpell.getController(),card.getController(),comparison='Equal',onTrue=condition(castSpell.getType(),'Instant OR Sorcery',comparison='Contains',onTrue=condition(castSpell.getManaValue(),1,comparison='LessEqual',onTrue=card.getController().draw(1))))) \n activeAbility(action=(forEach(target(filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=exile(forEachTarget)),card.getController().addMana('Any',1)),cost='2',tap=True)
+T2: Create a copy of {cardName} except it isn't legendary and has haste. At the beginning of your end step, exile the copy.
+activeAbility(action=(createCopy('{cardName}',legendary=False),createdCopy.addAbilitiy('Haste'),atBeginningEndStep(exile(createdCopy))),cost='2',tap=True)
+Surveil 2, then choose an instant or sorcery card in your graveyard. You may cast it this turn. If that spell would be put into your graveyard, exile it instead.
+onCast((surveil(2),forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,until=endTurn,optional=True,exileIfWouldBePutIntoGraveyard=True))))
+This spell costs {1} less to cast for each instant and sorcery card in your graveyard. \n Reach \n Whenever {cardName} attacks, you may cast target instant or sorcery card from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead.
+beforeCast(reduceCostForEach(card,cost='1',zone='graveyard',filter='type:Instant OR type:Sorcery')) \n keyWords('Reach') \n onAttack(condition(attackingCreature,card,comparison='Equal',onTrue=forEach(target(num=1,filter='zone:graveyard AND (type:Instant OR type:Sorcery)'),action=castFromGraveyard(forEachTarget,optional=True,withoutPay=True,exileIfWouldBePutIntoGraveyard=True))))
+Trample, reach \n Converge - This creature enters with a +1/+1 counter on it for each color of mana spent to cast it.
+keyWords('Trample','Reach') \n onCast(addCounter(card,'+1/+1',num=colorCount(card.manaSpent)))
+Return target nonland permanent card from your graveyard to the battlefield. \n Paradigm
+onCast(forEach(target(num=1,filter='zone:graveyard AND type:Permanent AND NOT type:Land'),action=returnToBattlefield(forEachTarget))) \n keyWords('Paradigm')
+Create two 2/2 red and white Spirit creature tokens. Then if this spell was cast from anywhere other than your hand, put a +1/+1 counter on each Spirit you control. \n Flashback {4}{W}{W}
+onCast((createToken(name='Spirit',type='Creature - Spirit',colors=['R','W'],power=2,toughness=2,num=2),condition(card.getCastZone(),'Hand',comparison='NotEqual',onTrue=forEach(target(filter='controller:self AND type:Spirit'),action=addCounter(forEachTarget,'+1/+1',num=1))))) \n passiveAbility(flashback(cost='4WW'))
+
+
+
+
+
+
+
+
+
+
+
+
